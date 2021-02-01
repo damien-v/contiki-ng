@@ -112,6 +112,9 @@ typedef struct spi_device {
   uint8_t spi_pha;                  /* SPI mode phase */
   uint8_t spi_pol;                  /* SPI mode polarity */
   uint8_t spi_controller;           /* ID of SPI controller to use */
+#ifdef SPI_ARCH_SLAVE_SUPPORTED
+  bool slave;                       /* set to slave if true */
+#endif /* SPI_ARCH_SLAVE_SUPPORTED */
 } spi_device_t;
 /** @} */
 /*---------------------------------------------------------------------------*/

@@ -155,6 +155,7 @@
 #define GPIO_HAL_CONF_ARCH_SW_TOGGLE         0
 #define GPIO_HAL_CONF_PORT_PIN_NUMBERING     0
 /*---------------------------------------------------------------------------*/
+#define SPI_HAL_CONF_ARCH_HDR_PATH   "dev/spi-arch.h"
 #define SPI_CONF_CONTROLLER_COUNT    2
 /*---------------------------------------------------------------------------*/
 #endif /* CC13XX_CC26XX_DEF_H_ */

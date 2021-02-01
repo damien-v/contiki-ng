@@ -115,7 +115,12 @@ spi_arch_lock_and_open(const spi_device_t *dev)
   board_spi_locks_spi[dev->spi_controller].owner = dev;
 
   /* CS pin configuration */
-  ti_lib_ioc_pin_type_gpio_output(dev->pin_spi_cs);
+#ifdef SPI_ARCH_SLAVE_SUPPORTED
+  if(dev->slave)
+    ti_lib_ioc_pin_type_gpio_input(dev->pin_spi_cs);
+  else
+#endif /* SPI_ARCH_SLAVE_SUPPORTED */
+    ti_lib_ioc_pin_type_gpio_output(dev->pin_spi_cs);
 
   /* First, make sure the SERIAL PD is on */
   ti_lib_prcm_power_domain_on(spi_controller[dev->spi_controller].power_domain);
@@ -133,12 +138,25 @@ spi_arch_lock_and_open(const spi_device_t *dev)
   
   ti_lib_ssi_config_set_exp_clk(spi_controller[dev->spi_controller].ssi_base,
                                 ti_lib_sys_ctrl_clock_get(),
-                                get_mode(dev), SSI_MODE_MASTER,
+                                get_mode(dev), 
+#ifdef SPI_ARCH_SLAVE_SUPPORTED
+                                dev->slave ? SSI_MODE_SLAVE :
+#endif /* SPI_ARCH_SLAVE_SUPPORTED */
+                                SSI_MODE_MASTER,
                                 dev->spi_bit_rate, 8);
-  ti_lib_ioc_pin_type_ssi_master(spi_controller[dev->spi_controller].ssi_base,
-                                 dev->pin_spi_miso,
-                                 dev->pin_spi_mosi, IOID_UNUSED,
-                                 dev->pin_spi_sck);
+#ifdef SPI_ARCH_SLAVE_SUPPORTED
+  if(dev->slave)
+    ti_lib_ioc_pin_type_ssi_slave(spi_controller[dev->spi_controller].ssi_base, 
+                                  dev->pin_spi_mosi,
+                                  dev->pin_spi_miso,
+                                  dev->pin_spi_cs,
+                                  dev->pin_spi_sck);
+  else
+#endif /* SPI_ARCH_SLAVE_SUPPORTED */
+    ti_lib_ioc_pin_type_ssi_master(spi_controller[dev->spi_controller].ssi_base,
+                                  dev->pin_spi_miso,
+                                  dev->pin_spi_mosi, IOID_UNUSED,
+                                  dev->pin_spi_sck);
 
   ti_lib_ssi_enable(spi_controller[dev->spi_controller].ssi_base);
 
@@ -215,7 +233,10 @@ spi_arch_transfer(const spi_device_t *dev,
       inbuf[i] = (uint8_t)c;
     }
   }
-  while(ti_lib_ssi_data_get_non_blocking(spi_controller[dev->spi_controller].ssi_base, &c)) ;
+#ifdef SPI_ARCH_SLAVE_SUPPORTED
+  if(!dev->slave)
+#endif /* SPI_ARCH_SLAVE_SUPPORTED */
+    while(ti_lib_ssi_data_get_non_blocking(spi_controller[dev->spi_controller].ssi_base, &c));
   return SPI_DEV_STATUS_OK;
 }
 /*---------------------------------------------------------------------------*/
